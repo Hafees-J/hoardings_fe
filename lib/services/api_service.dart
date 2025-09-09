@@ -5,7 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/board.dart';
 
 class ApiService {
-  static const String baseUrl = "http://127.0.0.1:8000/api";
+  static const String baseUrl = "http://103.99.144.99:8080/api";
 
   // 🔹 Save tokens locally
   static Future<void> saveTokens(String access, String refresh) async {

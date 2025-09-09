@@ -1,3 +1,4 @@
+
 class Board {
   final int id;
   final String location;
@@ -31,8 +32,8 @@ class Board {
       longitude: (json['longitude'] as num?)?.toDouble() ?? 0.0,
       image: json['image'] != null
     ? (json['image'].toString().startsWith('http')
-        ? json['image'] // already full URL
-        : "http://127.0.0.1:8000${json['image']}") // relative path
+       ? json['image'].replaceFirst("http://103.99.144.99", "http://103.99.144.99:8080")
+        : "http://103.99.144.99:8080${json['image']}") // relative path
     : '',
 
       amount: double.tryParse(json['amount'].toString()) ?? 0.0,

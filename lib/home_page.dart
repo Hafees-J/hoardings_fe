@@ -58,7 +58,9 @@ class _HomePageState extends State<HomePage> {
         title: const Text("Delete Board"),
         content: const Text("Are you sure you want to delete this board?"),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Cancel")),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text("Cancel")),
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx, true),
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
@@ -74,111 +76,92 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  // ✅ Board Card UI
-  Widget _buildBoardCard(Board board) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-      elevation: 8,
-      shadowColor: Colors.black26,
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Clickable Image with Hero animation
-          GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => FullImagePage(imageUrl: board.image),
-                ),
-              );
-            },
-            child: Hero(
-              tag: board.image,
-              child: board.image.isNotEmpty
-                  ? Image.network(
-                      board.image,
-                      height: 150,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                    )
-                  : Container(
-                      height: 150,
-                      color: Colors.grey[300],
-                      child: const Icon(Icons.image_not_supported,
-                          size: 60, color: Colors.grey),
-                    ),
+  // ✅ Board Card UI (fixed for overflow)
+Widget _buildBoardCard(Board board) {
+  return Card(
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+    elevation: 6,
+    shadowColor: Colors.black26,
+    clipBehavior: Clip.antiAlias,
+    child: Column(
+      mainAxisSize: MainAxisSize.min, // ✅ only wrap content
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Image
+        GestureDetector(
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => FullImagePage(imageUrl: board.image),
             ),
           ),
-
-          // Card Content
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Title
-                Text(
-                  board.location,
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.bold),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-
-                const SizedBox(height: 6),
-
-                // Price
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Chip(
-                    label: Text("₹${board.amount}"),
-                    backgroundColor: Colors.green[50],
-                    labelStyle: const TextStyle(
-                        color: Colors.green, fontWeight: FontWeight.bold),
+          child: Hero(
+            tag: board.image,
+            child: board.image.isNotEmpty
+                ? Image.network(board.image,
+                    height: 120, width: double.infinity, fit: BoxFit.cover)
+                : Container(
+                    height: 120,
+                    color: Colors.grey[300],
+                    child: const Icon(Icons.image_not_supported,
+                        size: 50, color: Colors.grey),
                   ),
-                ),
+          ),
+        ),
 
-                const Divider(height: 20),
+        // Content
+        Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(board.location,
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis),
+              const SizedBox(height: 6),
+              Chip(
+                label: Text("₹${board.amount}"),
+                backgroundColor: Colors.green[50],
+                labelStyle: const TextStyle(
+                    color: Colors.green, fontWeight: FontWeight.bold),
+              ),
+              const Divider(height: 18),
+              if (board.createdBy != null)
+                _infoRow(Icons.person, "Created by", board.createdBy!),
+              if (board.renewalBy != null)
+                _infoRow(Icons.manage_accounts, "Renewal by", board.renewalBy!),
+              if (board.renewalAt != null)
+                _infoRow(Icons.calendar_today, "Renewal at", board.renewalAt!),
+              if (board.nextRenewalAt != null)
+                _infoRow(Icons.event_available, "Next Renewal",
+                    board.nextRenewalAt!),
+              _infoRow(Icons.map, "Lat/Long",
+                  "${board.latitude}, ${board.longitude}"),
+            ],
+          ),
+        ),
 
-                // Info rows
-                if (board.createdBy != null)
-                  _infoRow(Icons.person, "Created by", board.createdBy!),
-                if (board.renewalBy != null)
-                  _infoRow(Icons.manage_accounts, "Renewal by", board.renewalBy!),
-                if (board.renewalAt != null)
-                  _infoRow(Icons.calendar_today, "Renewal at", board.renewalAt!),
-                if (board.nextRenewalAt != null)
-                  _infoRow(Icons.event_available, "Next Renewal", board.nextRenewalAt!),
-                _infoRow(Icons.map, "Lat/Long",
-                    "${board.latitude}, ${board.longitude}"),
-
-                const SizedBox(height: 10),
-
-                // Action Buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.edit, color: Colors.blue),
-                      onPressed: () => _editBoard(board),
-                      tooltip: "Edit Board",
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => _deleteBoard(board.id),
-                      tooltip: "Delete Board",
-                    ),
-                  ],
-                )
-              ],
+        // Buttons (now just after content, no gap)
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.edit, color: Colors.blue),
+              onPressed: () => _editBoard(board),
             ),
-          )
-        ],
-      ),
-    );
-  }
+            IconButton(
+              icon: const Icon(Icons.delete, color: Colors.red),
+              onPressed: () => _deleteBoard(board.id),
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
 
   Widget _infoRow(IconData icon, String label, String value) {
     return Padding(
@@ -188,7 +171,8 @@ class _HomePageState extends State<HomePage> {
           Icon(icon, size: 16, color: Colors.grey[600]),
           const SizedBox(width: 6),
           Text("$label: ",
-              style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.black54)),
+              style: const TextStyle(
+                  fontWeight: FontWeight.w600, color: Colors.black54)),
           Expanded(
             child: Text(value,
                 style: const TextStyle(color: Colors.black87),
@@ -226,28 +210,25 @@ class _HomePageState extends State<HomePage> {
             final errorMsg = snapshot.error.toString();
             if (errorMsg.contains("Unauthorized")) {
               Future.microtask(() => _logoutAndRedirect());
-              return const Center(child: Text("Session expired. Redirecting to login..."));
+              return const Center(
+                  child: Text("Session expired. Redirecting to login..."));
             }
             return Center(child: Text("Error: $errorMsg"));
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return const Center(child: Text("No boards available"));
           } else {
             final boards = snapshot.data!;
-            return GridView.builder(
-              padding: const EdgeInsets.all(12),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 1.7, // keep balanced
-              ),
-              itemCount: boards.length,
-              itemBuilder: (context, index) {
-                return IntrinsicHeight(
-                  child: _buildBoardCard(boards[index]),
-                );
-              },
-            );
+return GridView.builder(
+  padding: const EdgeInsets.all(12),
+  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+    maxCrossAxisExtent: 320, // max width for each card
+    crossAxisSpacing: 12,
+    mainAxisSpacing: 12,
+    childAspectRatio: 0.72, // adjust height balance
+  ),
+  itemCount: boards.length,
+  itemBuilder: (context, index) => _buildBoardCard(boards[index]),
+);
 
           }
         },
