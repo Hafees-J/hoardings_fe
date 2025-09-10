@@ -3,6 +3,8 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/board.dart';
+import 'dart:typed_data';
+
 
 class ApiService {
   static const String baseUrl = "http://103.99.144.99:8080/api";
@@ -146,32 +148,37 @@ class ApiService {
   }
 
   // 🔹 Update board (with optional image)
-  static Future<void> updateBoard(Board board, {File? imageFile}) async {
-    final token = await getAccessToken();
-    var uri = Uri.parse("$baseUrl/Boards/${board.id}/");
-
-    var request = http.MultipartRequest("PUT", uri);
-    request.headers["Authorization"] = "Bearer $token";
-
-    request.fields["location"] = board.location;
-    request.fields["amount"] = board.amount.toString();
-    request.fields["latitude"] = board.latitude.toString();
-    request.fields["longitude"] = board.longitude.toString();
-    request.fields["renewal_at"] = board.renewalAt.toString();
-    request.fields["next_renewal_at"] = board.nextRenewalAt.toString();
-    request.fields["renewalby"] = board.renewalBy.toString();
-    request.fields["createdby"] = board.createdBy.toString();
-
-    if (imageFile != null) {
-      request.files.add(await http.MultipartFile.fromPath("image", imageFile.path));
-    }
-
-    var response = await request.send();
-    if (response.statusCode != 200) {
-      final respStr = await response.stream.bytesToString();
-      throw Exception("Failed to update board: $respStr");
-    }
+  // 🔹 Update board (with optional image)
+static Future<void> updateBoard(Board board, {File? imageFile}) async {
+  final token = await getAccessToken();
+  if (board.id == null) {
+    throw Exception("Board id is required for update");
   }
+
+  var uri = Uri.parse("$baseUrl/Boards/${board.id}/");
+  var request = http.MultipartRequest("PUT", uri);
+  request.headers["Authorization"] = "Bearer $token";
+
+  request.fields["location"] = board.location;
+  request.fields["amount"] = board.amount.toString();
+  request.fields["latitude"] = board.latitude.toString();
+  request.fields["longitude"] = board.longitude.toString();
+  request.fields["renewal_at"] = board.renewalAt.toString();
+  request.fields["next_renewal_at"] = board.nextRenewalAt.toString();
+  request.fields["renewalby"] = board.renewalBy.toString();
+  request.fields["createdby"] = board.createdBy.toString();
+
+  if (imageFile != null) {
+    request.files.add(await http.MultipartFile.fromPath("image", imageFile.path));
+  }
+
+  var response = await request.send();
+  if (response.statusCode != 200) {
+    final respStr = await response.stream.bytesToString();
+    throw Exception("Failed to update board: $respStr");
+  }
+}
+
 
   // 🔹 Delete board
   static Future<void> deleteBoard(int id) async {
@@ -185,6 +192,59 @@ class ApiService {
       throw Exception("Failed to delete board: ${response.body}");
     }
   }
+  static Future<void> createBoardWeb(Board board, Uint8List imageBytes, String fileName) async {
+  final token = await getAccessToken();
+  var uri = Uri.parse("$baseUrl/Boards/");
+
+  var request = http.MultipartRequest("POST", uri);
+  request.headers["Authorization"] = "Bearer $token";
+
+  request.fields["location"] = board.location;
+  request.fields["amount"] = board.amount.toString();
+  request.fields["latitude"] = board.latitude.toString();
+  request.fields["longitude"] = board.longitude.toString();
+  request.fields["renewal_at"] = board.renewalAt.toString();
+  request.fields["next_renewal_at"] = board.nextRenewalAt.toString();
+  request.fields["renewalby"] = board.renewalBy.toString();
+  request.fields["createdby"] = board.createdBy.toString();
+
+  // ✅ Add image as bytes for web
+  request.files.add(http.MultipartFile.fromBytes("image", imageBytes, filename: fileName));
+
+  var response = await request.send();
+  if (response.statusCode != 201) {
+    final respStr = await response.stream.bytesToString();
+    throw Exception("Failed to create board: $respStr");
+  }
+}
+
+static Future<void> updateBoardWeb(Board board, Uint8List? imageBytes, String? fileName) async {
+  final token = await getAccessToken();
+  var uri = Uri.parse("$baseUrl/Boards/${board.id}/");
+
+  var request = http.MultipartRequest("PUT", uri);
+  request.headers["Authorization"] = "Bearer $token";
+
+  request.fields["location"] = board.location;
+  request.fields["amount"] = board.amount.toString();
+  request.fields["latitude"] = board.latitude.toString();
+  request.fields["longitude"] = board.longitude.toString();
+  request.fields["renewal_at"] = board.renewalAt ?? "";
+  request.fields["next_renewal_at"] = board.nextRenewalAt ?? "";
+  request.fields["renewalby"] = board.renewalBy ?? "";
+  request.fields["createdby"] = board.createdBy ?? "";
+
+  if (imageBytes != null && fileName != null) {
+    request.files.add(http.MultipartFile.fromBytes("image", imageBytes, filename: fileName));
+  }
+
+  var response = await request.send();
+  if (response.statusCode != 200) {
+    final respStr = await response.stream.bytesToString();
+    throw Exception("Failed to update board: $respStr");
+  }
+}
+
 }
 
 

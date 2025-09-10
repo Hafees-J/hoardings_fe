@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- Allow direct IP -->
+        <domain includeSubdomains="true">103.99.144.99</domain>
+        <!-- Allow local testing -->
+        <domain includeSubdomains="true">localhost</domain>
+    </domain-config>
+</network-security-config>

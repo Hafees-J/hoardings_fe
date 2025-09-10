@@ -51,7 +51,9 @@ class _HomePageState extends State<HomePage> {
     if (result == true) _reloadBoards();
   }
 
-  Future<void> _deleteBoard(int id) async {
+  Future<void> _deleteBoard(int? id) async {
+    if (id == null) return; // ✅ prevent null crash
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -76,92 +78,95 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  // ✅ Board Card UI (fixed for overflow)
-Widget _buildBoardCard(Board board) {
-  return Card(
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-    elevation: 6,
-    shadowColor: Colors.black26,
-    clipBehavior: Clip.antiAlias,
-    child: Column(
-      mainAxisSize: MainAxisSize.min, // ✅ only wrap content
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Image
-        GestureDetector(
-          onTap: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => FullImagePage(imageUrl: board.image),
+  // ✅ Board Card UI (fixed for overflow + id handling)
+  Widget _buildBoardCard(Board board) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      elevation: 6,
+      shadowColor: Colors.black26,
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        mainAxisSize: MainAxisSize.min, // ✅ only wrap content
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Image
+          GestureDetector(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => FullImagePage(imageUrl: board.image),
+              ),
+            ),
+            child: Hero(
+              tag: board.image,
+              child: board.image.isNotEmpty
+                  ? Image.network(board.image,
+                      height: 120, width: double.infinity, fit: BoxFit.cover)
+                  : Container(
+                      height: 120,
+                      color: Colors.grey[300],
+                      child: const Icon(Icons.image_not_supported,
+                          size: 50, color: Colors.grey),
+                    ),
             ),
           ),
-          child: Hero(
-            tag: board.image,
-            child: board.image.isNotEmpty
-                ? Image.network(board.image,
-                    height: 120, width: double.infinity, fit: BoxFit.cover)
-                : Container(
-                    height: 120,
-                    color: Colors.grey[300],
-                    child: const Icon(Icons.image_not_supported,
-                        size: 50, color: Colors.grey),
-                  ),
-          ),
-        ),
 
-        // Content
-        Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          // Content
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(board.location,
+                    style: const TextStyle(
+                        fontSize: 16, fontWeight: FontWeight.bold),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 6),
+                Chip(
+                  label: Text("₹${board.amount}"),
+                  backgroundColor: Colors.green[50],
+                  labelStyle: const TextStyle(
+                      color: Colors.green, fontWeight: FontWeight.bold),
+                ),
+                const Divider(height: 18),
+                if (board.createdBy != null)
+                  _infoRow(Icons.person, "Created by", board.createdBy!),
+                if (board.renewalBy != null)
+                  _infoRow(Icons.manage_accounts, "Renewal by", board.renewalBy!),
+                if (board.renewalAt != null)
+                  _infoRow(Icons.calendar_today, "Renewal at", board.renewalAt!),
+                if (board.nextRenewalAt != null)
+                  _infoRow(Icons.event_available, "Next Renewal",
+                      board.nextRenewalAt!),
+                _infoRow(Icons.map, "Lat/Long",
+                    "${board.latitude}, ${board.longitude}"),
+              ],
+            ),
+          ),
+
+          // Buttons (now just after content, no gap)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Text(board.location,
-                  style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.bold),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis),
-              const SizedBox(height: 6),
-              Chip(
-                label: Text("₹${board.amount}"),
-                backgroundColor: Colors.green[50],
-                labelStyle: const TextStyle(
-                    color: Colors.green, fontWeight: FontWeight.bold),
+              IconButton(
+                icon: const Icon(Icons.edit, color: Colors.blue),
+                onPressed: () => _editBoard(board),
               ),
-              const Divider(height: 18),
-              if (board.createdBy != null)
-                _infoRow(Icons.person, "Created by", board.createdBy!),
-              if (board.renewalBy != null)
-                _infoRow(Icons.manage_accounts, "Renewal by", board.renewalBy!),
-              if (board.renewalAt != null)
-                _infoRow(Icons.calendar_today, "Renewal at", board.renewalAt!),
-              if (board.nextRenewalAt != null)
-                _infoRow(Icons.event_available, "Next Renewal",
-                    board.nextRenewalAt!),
-              _infoRow(Icons.map, "Lat/Long",
-                  "${board.latitude}, ${board.longitude}"),
+              IconButton(
+                icon: const Icon(Icons.delete, color: Colors.red),
+                onPressed: () {
+                  if (board.id != null) {
+                    _deleteBoard(board.id); // ✅ safe delete
+                  }
+                },
+              ),
             ],
           ),
-        ),
-
-        // Buttons (now just after content, no gap)
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.edit, color: Colors.blue),
-              onPressed: () => _editBoard(board),
-            ),
-            IconButton(
-              icon: const Icon(Icons.delete, color: Colors.red),
-              onPressed: () => _deleteBoard(board.id),
-            ),
-          ],
-        ),
-      ],
-    ),
-  );
-}
-
+        ],
+      ),
+    );
+  }
 
   Widget _infoRow(IconData icon, String label, String value) {
     return Padding(
@@ -218,18 +223,18 @@ Widget _buildBoardCard(Board board) {
             return const Center(child: Text("No boards available"));
           } else {
             final boards = snapshot.data!;
-return GridView.builder(
-  padding: const EdgeInsets.all(12),
-  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-    maxCrossAxisExtent: 320, // max width for each card
-    crossAxisSpacing: 12,
-    mainAxisSpacing: 12,
-    childAspectRatio: 0.72, // adjust height balance
-  ),
-  itemCount: boards.length,
-  itemBuilder: (context, index) => _buildBoardCard(boards[index]),
-);
-
+            return GridView.builder(
+              padding: const EdgeInsets.all(12),
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 320, // max width for each card
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 12,
+                childAspectRatio: 0.72, // adjust height balance
+              ),
+              itemCount: boards.length,
+              itemBuilder: (context, index) =>
+                  _buildBoardCard(boards[index]),
+            );
           }
         },
       ),
@@ -260,3 +265,4 @@ class FullImagePage extends StatelessWidget {
     );
   }
 }
+

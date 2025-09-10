@@ -1,6 +1,6 @@
 
 class Board {
-  final int id;
+  final int? id;
   final String location;
   final double latitude;
   final double longitude;
@@ -12,7 +12,7 @@ class Board {
   final String? createdBy;
 
   Board({
-    required this.id,
+    this.id,
     required this.location,
     required this.latitude,
     required this.longitude,
